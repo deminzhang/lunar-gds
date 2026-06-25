@@ -571,7 +571,7 @@ static func solarToLunar(y: int, m: int, d: int) -> Dictionary:
 # ============================================================
 
 static func getDayGanZhi(jd: float) -> String:
-	var noon: float = jd - 0.5
+	var noon: float = jd + 0.5
 	var offset: int = int(noon) - 11
 	var gan: int = posmod(offset, 10)
 	var zhi: int = posmod(offset, 12)
@@ -640,7 +640,7 @@ static func getBaZi(y: int, m: int, d: int, h: int) -> Dictionary:
 	
 	# Day Pillar
 	var day_gan_zhi_str: String = getDayGanZhi(jd)
-	var noon_jd: float = jd - 0.5
+	var noon_jd: float = jd + 0.5
 	var day_gan_index: int = posmod(int(noon_jd) - 11, 10)
 	
 	# Hour Pillar
