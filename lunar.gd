@@ -534,7 +534,7 @@ static func solarToLunar(y: int, m: int, d: int) -> Dictionary:
 		if diff >= 0.0 and diff < float(days_in_month):
 			lunar_year = mon["year"]
 			lunar_month = abs(mon["month"])
-			lunar_day = int(diff) + 1
+			lunar_day = int(diff + 0.5) + 1  # round to nearest calendar day
 			is_leap = mon["month"] < 0
 			found = true
 			break
@@ -548,7 +548,7 @@ static func solarToLunar(y: int, m: int, d: int) -> Dictionary:
 			if diff >= 0.0 and diff < float(days_in_month):
 				lunar_year = mon["year"]
 				lunar_month = abs(mon["month"])
-				lunar_day = int(diff) + 1
+				lunar_day = int(diff + 0.5) + 1  # round to nearest calendar day
 				is_leap = mon["month"] < 0
 				found = true
 				break
