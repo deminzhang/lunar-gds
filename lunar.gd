@@ -577,6 +577,28 @@ static func getDayGanZhi(jd: float) -> String:
 	var zhi: int = posmod(offset, 12)
 	return GAN[gan + 1] + ZHI[zhi + 1]
 
+# ---- 日柱三口径（对齐 lunar-go / lunar-python 的 GetDayGanZhi / *Exact / *Exact2）----
+#   民用 `getDayGanZhi(jd)`            : 0 点换日（民用历；jd 为当日 0 点儒略日）
+#   精确 `getDayGanZhiExact(y,m,d,h)`  : **23:00 起进位次日**（= lunar-go GetDayGanZhiExact）
+#   二号 `getDayGanZhiExact2(y,m,d,h)` : 23:00 仍算当日（= lunar-go GetDayGanZhiExact2，
+#                                       "晚子时用当日"一派）
+#   注：与官方一致 —— 时柱五鼠遁恒用「精确」日干（见 getBaZi）
+static func _dayOffset(y: int, m: int, d: int, h: int, exact: bool) -> int:
+	# jd of 00:00 of that civil day; +0.5 → 正午（与 getDayGanZhi 同一取整口径）
+	var off: int = int(solarGetJulianDay(y, m, d, 0, 0, 0) + 0.5) - 11
+	if exact and h >= 23:
+		off += 1
+	return off
+
+static func _dayGanZhiOf(off: int) -> String:
+	return GAN[posmod(off, 10) + 1] + ZHI[posmod(off, 12) + 1]
+
+static func getDayGanZhiExact(y: int, m: int, d: int, h: int) -> String:
+	return _dayGanZhiOf(_dayOffset(y, m, d, h, true))
+
+static func getDayGanZhiExact2(y: int, m: int, d: int, h: int) -> String:
+	return _dayGanZhiOf(_dayOffset(y, m, d, h, false))
+
 static func getHourGanZhi(day_gan_index: int, hour: int) -> String:
 	var zhi_index: int = int(floor(float(hour + 1) / 2.0)) % 12
 	var gan_index: int = posmod(day_gan_index % 5 * 2 + zhi_index, 10)
@@ -638,12 +660,13 @@ static func getBaZi(y: int, m: int, d: int, h: int) -> Dictionary:
 	var jd: float = l["jd"]
 	var year_gan_zhi: String = l["year_gan_zhi"]
 	
-	# Day Pillar
-	var day_gan_zhi_str: String = getDayGanZhi(jd)
-	var noon_jd: float = jd + 0.5
-	var day_gan_index: int = posmod(int(noon_jd) - 11, 10)
+	# Day Pillar（精确口径：23:00 起算次日 —— 见 getDayGanZhiExact）
+	var day_offset: int = _dayOffset(y, m, d, h, true)
+	var day_gan_index: int = posmod(day_offset, 10)
+	var day_zhi_index: int = posmod(day_offset, 12)
+	var day_gan_zhi_str: String = _dayGanZhiOf(day_offset)
 	
-	# Hour Pillar
+	# Hour Pillar（五鼠遁用精确日干，与 lunar-go computeTime 一致）
 	var hour_zhi_index: int = int(floor(float(h + 1) / 2.0)) % 12
 	var hour_gan_index: int = posmod(day_gan_index % 5 * 2 + hour_zhi_index, 10)
 	var hour_gan_zhi: String = GAN[hour_gan_index + 1] + ZHI[hour_zhi_index + 1]
@@ -667,7 +690,7 @@ static func getBaZi(y: int, m: int, d: int, h: int) -> Dictionary:
 	var month_zhi_index: int = posmod(month_index + 2, 12)
 	var month_gan_zhi: String = GAN[month_gan_index + 1] + ZHI[month_zhi_index + 1]
 	
-	return {"year": year_gan_zhi, "month": month_gan_zhi, "day": day_gan_zhi_str, "hour": hour_gan_zhi, "year_gan": GAN[year_gan_idx + 1], "year_zhi": ZHI[posmod(offset2, 12) + 1], "month_gan": GAN[month_gan_index + 1], "month_zhi": ZHI[month_zhi_index + 1], "day_gan": GAN[day_gan_index + 1], "day_zhi": ZHI[posmod(int(noon_jd) - 11, 12) + 1], "hour_gan": GAN[hour_gan_index + 1], "hour_zhi": ZHI[hour_zhi_index + 1]}
+	return {"year": year_gan_zhi, "month": month_gan_zhi, "day": day_gan_zhi_str, "hour": hour_gan_zhi, "year_gan": GAN[year_gan_idx + 1], "year_zhi": ZHI[posmod(offset2, 12) + 1], "month_gan": GAN[month_gan_index + 1], "month_zhi": ZHI[month_zhi_index + 1], "day_gan": GAN[day_gan_index + 1], "day_zhi": ZHI[day_zhi_index + 1], "hour_gan": GAN[hour_gan_index + 1], "hour_zhi": ZHI[hour_zhi_index + 1]}
 
 # ============================================================
 # SECTION 9: Convenience API
@@ -681,6 +704,12 @@ static func get_day_gan_zhi(jd: float) -> String:
 
 static func get_hour_gan_zhi(day_gan_index: int, hour: int) -> String:
 	return getHourGanZhi(day_gan_index, hour)
+
+static func get_day_gan_zhi_exact(y: int, m: int, d: int, h: int) -> String:
+	return getDayGanZhiExact(y, m, d, h)
+
+static func get_day_gan_zhi_exact2(y: int, m: int, d: int, h: int) -> String:
+	return getDayGanZhiExact2(y, m, d, h)
 
 static func get_current_jie_qi(y: int, m: int, d: int) -> String:
 	return getCurrentJieQi(y, m, d)
